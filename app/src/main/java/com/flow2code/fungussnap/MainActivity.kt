@@ -23,8 +23,12 @@ import android.provider.MediaStore
 
 import android.content.ContentValues
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 
 typealias LumaListener = (luma: Double) -> Unit
+
+var isIntervalSet = false
 
 class MainActivity : AppCompatActivity() {
     private lateinit var viewBinding: ActivityMainBinding
@@ -35,6 +39,16 @@ class MainActivity : AppCompatActivity() {
     private var recording: Recording? = null
 
     private lateinit var cameraExecutor: ExecutorService
+
+    val mainHandler = Handler(Looper.getMainLooper())
+
+    private var takePhotoHandler = object : Runnable {
+        override fun run() {
+            takePhoto()
+            Log.i("XD","taken")
+            mainHandler.postDelayed(this, 60000)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,9 +65,21 @@ class MainActivity : AppCompatActivity() {
 
         // Set up the listeners for take photo and video capture buttons
         viewBinding.imageCaptureButton.setOnClickListener { takePhoto() }
-        viewBinding.videoCaptureButton.setOnClickListener { captureVideo() }
+        viewBinding.videoCaptureButton.setOnClickListener { takePhotoWithInterval() }
 
         cameraExecutor = Executors.newSingleThreadExecutor()
+    }
+
+    private fun takePhotoWithInterval(){
+        if(!isIntervalSet){
+            isIntervalSet = true
+            viewBinding.videoCaptureButton.text = getText(R.string.stop_with_interval)
+            mainHandler.post(takePhotoHandler)
+        }else {
+            isIntervalSet = false
+            viewBinding.videoCaptureButton.text = getText(R.string.start_with_interval)
+            mainHandler.removeCallbacks(takePhotoHandler)
+        }
     }
 
     private fun takePhoto() {// Get a stable reference of the modifiable image capture use case
@@ -67,7 +93,9 @@ class MainActivity : AppCompatActivity() {
             put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
             //F2C - change that for fungus or so!
             if(Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/CameraX-Image")
+                //old
+//                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/CameraX-Image")
+                put(MediaStore.Images.Media.RELATIVE_PATH, "")
             }
         }
 
@@ -180,6 +208,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
             imageCapture = ImageCapture.Builder().build()
+            imageCapture!!.flashMode = ImageCapture.FLASH_MODE_AUTO
 
             val imageAnalyzer = ImageAnalysis.Builder()
                 .build()
