@@ -3,6 +3,7 @@ package com.flow2code.fungussnap
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.Manifest
+import android.app.Dialog
 import android.content.pm.PackageManager
 import android.util.Log
 import android.widget.Toast
@@ -25,6 +26,9 @@ import android.content.ContentValues
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.view.Window
+import android.widget.Button
+import android.widget.NumberPicker
 
 typealias LumaListener = (luma: Double) -> Unit
 
@@ -66,8 +70,45 @@ class MainActivity : AppCompatActivity() {
         // Set up the listeners for take photo and video capture buttons
         viewBinding.imageCaptureButton.setOnClickListener { takePhoto() }
         viewBinding.videoCaptureButton.setOnClickListener { takePhotoWithInterval() }
+        viewBinding.settingsButton.setOnClickListener { setTime() }
 
         cameraExecutor = Executors.newSingleThreadExecutor()
+    }
+
+    private fun setTime(){
+        val dialog = Dialog(this)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setCancelable(false)
+        dialog.setContentView(R.layout.pref_time)
+        val yesBtn = dialog.findViewById(R.id.ok) as Button
+        val hour = dialog.findViewById(R.id.hourPicker) as NumberPicker
+        hour.minValue = 0
+        hour.maxValue = 24
+        val minute = dialog.findViewById(R.id.minutePicker) as NumberPicker
+        minute.minValue = 0
+        minute.maxValue = 59
+        val second = dialog.findViewById(R.id.secondPicker) as NumberPicker
+        minute.minValue = 0
+        minute.maxValue = 59
+//        val noBtn = dialog.findViewById(R.id.noBtn) as TextView
+        yesBtn.setOnClickListener {
+            var endValue = 0
+            if(second.value != 0){
+                Log.i("XD",second.value.toString())
+                endValue += second.value * 1000
+            }
+            if(minute.value != 0){
+                Log.i("XD",minute.value.toString())
+                endValue += minute.value * 1000 * 60
+            }
+            if(hour.value != 0){
+                Log.i("XD",hour.value.toString())
+                endValue += hour.value * 1000 * 60 * 60
+            }
+            dialog.dismiss()
+        }
+//        noBtn.setOnClickListener { dialog.dismiss() }
+        dialog.show()
     }
 
     private fun takePhotoWithInterval(){
