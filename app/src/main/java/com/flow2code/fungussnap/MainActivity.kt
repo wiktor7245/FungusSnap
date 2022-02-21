@@ -23,6 +23,7 @@ import java.util.concurrent.ExecutorService
 import android.provider.MediaStore
 
 import android.content.ContentValues
+import android.content.Context
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -50,7 +51,15 @@ class MainActivity : AppCompatActivity() {
         override fun run() {
             takePhoto()
             Log.i("XD","taken")
-            mainHandler.postDelayed(this, 60000)
+            val sharedPref = this@MainActivity.getPreferences(Context.MODE_PRIVATE) ?: return
+            val time = sharedPref.getLong(getString(R.string.shared_time), 0)
+            if(time > 0){
+                mainHandler.postDelayed(this, time)
+                Toast.makeText(this@MainActivity, "Photo will be taken every ${time/1000} seconds", Toast.LENGTH_SHORT).show()
+            }else{
+                mainHandler.postDelayed(this, 60000)
+                Toast.makeText(this@MainActivity, "Photo will be taken every 60 seconds (default value)", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -76,6 +85,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setTime(){
+        isIntervalSet = false
+        mainHandler.removeCallbacks(takePhotoHandler)
+        if(viewBinding.videoCaptureButton.text == getText(R.string.stop_with_interval)) viewBinding.videoCaptureButton.text = getText(R.string.start_with_interval)
         val dialog = Dialog(this)
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         dialog.setCancelable(false)
@@ -88,11 +100,11 @@ class MainActivity : AppCompatActivity() {
         minute.minValue = 0
         minute.maxValue = 59
         val second = dialog.findViewById(R.id.secondPicker) as NumberPicker
-        minute.minValue = 0
-        minute.maxValue = 59
+        second.minValue = 0
+        second.maxValue = 59
 //        val noBtn = dialog.findViewById(R.id.noBtn) as TextView
         yesBtn.setOnClickListener {
-            var endValue = 0
+            var endValue: Long = 0
             if(second.value != 0){
                 Log.i("XD",second.value.toString())
                 endValue += second.value * 1000
@@ -104,6 +116,13 @@ class MainActivity : AppCompatActivity() {
             if(hour.value != 0){
                 Log.i("XD",hour.value.toString())
                 endValue += hour.value * 1000 * 60 * 60
+            }
+            if(endValue != (0).toLong()){
+                val sharedPref = this.getPreferences(Context.MODE_PRIVATE)
+                with (sharedPref.edit()) {
+                    putLong(getString(R.string.shared_time), endValue)
+                    apply()
+                }
             }
             dialog.dismiss()
         }

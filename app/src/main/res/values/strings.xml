@@ -7,4 +7,5 @@
     <string name="stop_with_interval">Stop taking photos with interval</string>
     <string name="pref_interval_default">5000</string>
     <string name="ok">OK</string>
+    <string name="shared_time">time</string>
 </resources>
